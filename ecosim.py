@@ -7,9 +7,6 @@ import streamlit as st
 # Define grid size
 grid_size = 20
 
-# Initialize the grid with random prey (1) and predators (2)
-grid = np.random.choice([0, 1, 2, 3, 4, 5], size=(grid_size, grid_size), p=[0.6, 0.1, 0.1, 0.1, 0.05, 0.05])
-
 def simulate_step(grid):
     new_grid = grid.copy()
     for i in range(grid_size):
@@ -49,71 +46,81 @@ def simulate_step(grid):
     return new_grid
 
 # Streamlit app
-st.title('EcoSim: A Simulated Ecosystem')
+def main():
+    st.title('EcoSim: A Simulated Ecosystem')
 
-# User input for grid size
-grid_size = st.slider('Grid Size', 10, 50, 20)
+    # User input for grid size
+    grid_size = st.slider('Grid Size', 10, 50, 20)
 
-# Initialize the grid
-grid = np.random.choice([0, 1, 2, 3, 4, 5], size=(grid_size, grid_size), p=[0.6, 0.1, 0.1, 0.1, 0.05, 0.05])
+    # Initialize the grid
+    grid = np.random.choice([0, 1, 2, 3, 4, 5], size=(grid_size, grid_size), p=[0.6, 0.1, 0.1, 0.1, 0.05, 0.05])
 
-# Display the initial grid
-st.write('Initial Ecosystem Grid')
-st.write(grid)
+    # Display the initial grid
+    st.write('Initial Ecosystem Grid')
+    st.write(grid)
 
-# Simulate steps
-steps = st.slider('Number of Steps', 1, 100, 10)
-population_data = []
+    # Simulate steps
+    steps = st.slider('Number of Steps', 1, 100, 10)
+    population_data = []
 
-for step in range(steps):
-    grid = simulate_step(grid)
-    prey_count = np.count_nonzero(grid == 1)
-    predator_count = np.count_nonzero(grid == 2)
-    new_predator_count = np.count_nonzero(grid == 5)
-    population_data.append({'step': step, 'prey': prey_count, 'predator': predator_count, 'new_predator': new_predator_count})
+    # Create a Streamlit placeholder for the grid visualization
+    grid_placeholder = st.empty()
 
-# Convert to DataFrame
-population_df = pd.DataFrame(population_data)
-
-# Display population trends
-st.write('Population Trends Over Time')
-st.line_chart(population_df.set_index('step'))
-
-# Display the final grid
-st.write('Final Ecosystem Grid')
-st.write(grid)
-
-# Calculate advanced statistics
-def calculate_statistics(population_df):
-    # Biodiversity index
-    population_df['biodiversity_index'] = population_df['prey'] + population_df['predator'] + population_df['new_predator']
-    
-    # Species survival probability
-    population_df['survival_probability'] = population_df['prey'] / (population_df['prey'] + population_df['predator'] + population_df['new_predator'])
-    
-    return population_df
-
-# Calculate and display advanced statistics
-population_df = calculate_statistics(population_df)
-st.write('Advanced Statistics')
-st.write(population_df[['biodiversity_index', 'survival_probability']])
-
-# Enhanced animation using Streamlit
-def animate_grid(grid):
-    fig, ax = plt.subplots()
-    im = ax.imshow(grid, cmap='viridis', animated=True)
-    plt.colorbar(im, ticks=[0, 1, 2, 3, 4, 5], label='Habitat State')
-    plt.title('Ecosystem Grid')
-    
-    def update(frame):
+    for step in range(steps):
+        # Simulate and update the grid
         grid = simulate_step(grid)
-        im.set_array(grid)
-        return im,
-    
-    ani = FuncAnimation(fig, update, frames=range(steps), blit=True)
-    return ani
+        
+        # Visualize the current grid state
+        fig, ax = plt.subplots(figsize=(8, 6))
+        im = ax.imshow(grid, cmap='viridis')
+        plt.colorbar(im, ax=ax, ticks=[0, 1, 2, 3, 4, 5], 
+                     label='Habitat State')
+        plt.title(f'Ecosystem Grid - Step {step}')
+        
+        # Update the placeholder with the new visualization
+        grid_placeholder.pyplot(fig)
+        plt.close(fig)
 
-# Display animation
-st.write('Ecosystem Animation')
-ani = animate_grid(grid)
-st.pyplot(ani.to_jshtml())
+        # Track population data
+        prey_count = np.count_nonzero(grid == 1)
+        predator_count = np.count_nonzero(grid == 2)
+        new_predator_count = np.count_nonzero(grid == 5)
+        population_data.append({
+            'step': step, 
+            'prey': prey_count, 
+            'predator': predator_count, 
+            'new_predator': new_predator_count
+        })
+
+    # Convert to DataFrame
+    population_df = pd.DataFrame(population_data)
+
+    # Display population trends
+    st.write('Population Trends Over Time')
+    st.line_chart(population_df.set_index('step'))
+
+    # Display the final grid
+    st.write('Final Ecosystem Grid')
+    st.write(grid)
+
+    # Advanced statistics
+    def calculate_statistics(population_df):
+        population_df['biodiversity_index'] = (
+            population_df['prey'] + 
+            population_df['predator'] + 
+            population_df['new_predator']
+        )
+        population_df['survival_probability'] = population_df['prey'] / (
+            population_df['prey'] + 
+            population_df['predator'] + 
+            population_df['new_predator']
+        )
+        return population_df
+
+    # Calculate and display advanced statistics
+    population_df = calculate_statistics(population_df)
+    st.write('Advanced Statistics')
+    st.write(population_df[['biodiversity_index', 'survival_probability']])
+
+if __name__ == "__main__":
+    main()
