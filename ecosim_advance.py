@@ -77,16 +77,26 @@ class EcosystemSimulation:
                     empty_neighbors = [n for n in neighbors if self.grid[n[0], n[1]] == EMPTY]
                     
                     # Reproduction
-                    if empty_neighbors and random.random() < 0.05:  # Reduced reproduction chance
+                    if empty_neighbors and random.random() < 0.03:  # Further reduced reproduction chance
                         nx, ny = random.choice(empty_neighbors)
                         new_grid[nx, ny] = PREY
                     
                     # High mortality rate
                     if random.random() < 0.1:
                         new_grid[x, y] = EMPTY
+                        # Two predators and two super predators die after prey dies
+                        predator_deaths = 0
+                        super_predator_deaths = 0
+                        for n in neighbors:
+                            if self.grid[n[0], n[1]] == PREDATOR and predator_deaths < 2:
+                                new_grid[n[0], n[1]] = EMPTY
+                                predator_deaths += 1
+                            elif self.grid[n[0], n[1]] == SUPER_PREDATOR and super_predator_deaths < 2:
+                                new_grid[n[0], n[1]] = EMPTY
+                                super_predator_deaths += 1
                 
                 elif cell == PREDATOR:
-                    # Predator hunting and starvation
+                    # Predator hunting and reproduction
                     neighbors = self.get_neighbors(x, y)
                     prey_neighbors = [n for n in neighbors if self.grid[n[0], n[1]] == PREY]
                     
@@ -95,6 +105,13 @@ class EcosystemSimulation:
                         nx, ny = random.choice(prey_neighbors)
                         new_grid[nx, ny] = PREDATOR
                         new_grid[x, y] = EMPTY
+                        
+                        # Reproduction
+                        if random.random() < 0.15:  # Increased reproduction chance
+                            empty_neighbors = [n for n in neighbors if self.grid[n[0], n[1]] == EMPTY]
+                            if empty_neighbors:
+                                nx, ny = random.choice(empty_neighbors)
+                                new_grid[nx, ny] = PREDATOR
                     elif random.random() < 0.2:
                         # Starvation
                         new_grid[x, y] = EMPTY
@@ -105,7 +122,7 @@ class EcosystemSimulation:
                         new_grid[x, y] = EMPTY
                 
                 elif cell == SUPER_PREDATOR:
-                    # Super predator hunting
+                    # Super predator hunting and reproduction
                     neighbors = self.get_neighbors(x, y)
                     huntable_neighbors = [n for n in neighbors if self.grid[n[0], n[1]] in [PREY, PREDATOR]]
                     
@@ -113,6 +130,13 @@ class EcosystemSimulation:
                         nx, ny = random.choice(huntable_neighbors)
                         new_grid[nx, ny] = SUPER_PREDATOR
                         new_grid[x, y] = EMPTY
+                        
+                        # Reproduction
+                        if random.random() < 0.2:  # Increased reproduction chance
+                            empty_neighbors = [n for n in neighbors if self.grid[n[0], n[1]] == EMPTY]
+                            if empty_neighbors:
+                                nx, ny = random.choice(empty_neighbors)
+                                new_grid[nx, ny] = SUPER_PREDATOR
                     elif random.random() < 0.2:
                         # Starvation
                         new_grid[x, y] = EMPTY
@@ -239,6 +263,7 @@ def main():
             'Population Stability',
             'Prey Population', 
             'Predator Population',
+            'Super Predator Population',
             'Vegetation Cover'
         ],
         'Value': [
@@ -247,6 +272,7 @@ def main():
             population_stability,
             population_df['prey'].mean(),
             population_df['predator'].mean(),
+            population_df['super_predator'].mean(),
             population_df['vegetation'].mean()
         ]
     })
