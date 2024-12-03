@@ -82,7 +82,7 @@ class EcosystemSimulation:
                         new_grid[nx, ny] = PREY
                     
                     # High mortality rate
-                    if random.random() < 0.2:  # Increased mortality rate
+                    if random.random() < 0.5:  # Increased mortality rate to 50%
                         new_grid[x, y] = EMPTY
                         # Two predators and two super predators die after prey dies
                         predator_deaths = 0
@@ -107,12 +107,12 @@ class EcosystemSimulation:
                         new_grid[x, y] = EMPTY
                         
                         # Reproduction
-                        if random.random() < 0.2:  # Increased reproduction chance
+                        if random.random() < 0.25:  # Increased reproduction chance
                             empty_neighbors = [n for n in neighbors if self.grid[n[0], n[1]] == EMPTY]
                             if empty_neighbors:
                                 nx, ny = random.choice(empty_neighbors)
                                 new_grid[nx, ny] = PREDATOR
-                    elif random.random() < 0.2:
+                    elif random.random() < 0.15:  # Reduced starvation rate
                         # Starvation
                         new_grid[x, y] = EMPTY
                     
@@ -132,12 +132,12 @@ class EcosystemSimulation:
                         new_grid[x, y] = EMPTY
                         
                         # Reproduction
-                        if random.random() < 0.25:  # Increased reproduction chance
+                        if random.random() < 0.5:  # Increased reproduction chance to twice that of predators
                             empty_neighbors = [n for n in neighbors if self.grid[n[0], n[1]] == EMPTY]
                             if empty_neighbors:
                                 nx, ny = random.choice(empty_neighbors)
                                 new_grid[nx, ny] = SUPER_PREDATOR
-                    elif random.random() < 0.2:
+                    elif random.random() < 0.15:  # Reduced starvation rate
                         # Starvation
                         new_grid[x, y] = EMPTY
 
