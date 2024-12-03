@@ -77,12 +77,12 @@ class EcosystemSimulation:
                     empty_neighbors = [n for n in neighbors if self.grid[n[0], n[1]] == EMPTY]
                     
                     # Reproduction
-                    if empty_neighbors and random.random() < 0.03:  # Further reduced reproduction chance
+                    if empty_neighbors and random.random() < 0.01:  # Further reduced reproduction chance
                         nx, ny = random.choice(empty_neighbors)
                         new_grid[nx, ny] = PREY
                     
                     # High mortality rate
-                    if random.random() < 0.1:
+                    if random.random() < 0.2:  # Increased mortality rate
                         new_grid[x, y] = EMPTY
                         # Two predators and two super predators die after prey dies
                         predator_deaths = 0
@@ -107,7 +107,7 @@ class EcosystemSimulation:
                         new_grid[x, y] = EMPTY
                         
                         # Reproduction
-                        if random.random() < 0.15:  # Increased reproduction chance
+                        if random.random() < 0.2:  # Increased reproduction chance
                             empty_neighbors = [n for n in neighbors if self.grid[n[0], n[1]] == EMPTY]
                             if empty_neighbors:
                                 nx, ny = random.choice(empty_neighbors)
@@ -132,7 +132,7 @@ class EcosystemSimulation:
                         new_grid[x, y] = EMPTY
                         
                         # Reproduction
-                        if random.random() < 0.2:  # Increased reproduction chance
+                        if random.random() < 0.25:  # Increased reproduction chance
                             empty_neighbors = [n for n in neighbors if self.grid[n[0], n[1]] == EMPTY]
                             if empty_neighbors:
                                 nx, ny = random.choice(empty_neighbors)
@@ -165,19 +165,39 @@ def main():
     population_data = []
     grid_states = []
 
+    # Create a Streamlit placeholder for the grid visualization
+    grid_placeholder = st.empty()
+
     # Run simulation
     for step in range(steps):
+        # Simulate and update the grid
         grid = sim.simulate_step(drought, flood, disease)
         grid_states.append(grid.copy())
 
-        # Track population
+        # Visualize the current grid state
+        fig, ax = plt.subplots(figsize=(10, 8))
+        im = ax.imshow(grid, cmap='viridis')
+        plt.colorbar(im, ax=ax, ticks=[EMPTY, PREY, PREDATOR, VEGETATION, WATER, SUPER_PREDATOR], 
+                     label='Habitat State')
+        plt.title(f'Ecosystem Grid - Step {step}')
+        
+        # Update the placeholder with the new visualization
+        grid_placeholder.pyplot(fig)
+        plt.close(fig)
+
+        # Track population data
+        prey_count = np.count_nonzero(grid == PREY)
+        predator_count = np.count_nonzero(grid == PREDATOR)
+        super_predator_count = np.count_nonzero(grid == SUPER_PREDATOR)
+        vegetation_count = np.count_nonzero(grid == VEGETATION)
+        water_count = np.count_nonzero(grid == WATER)
         population_data.append({
-            'step': step,
-            'prey': np.count_nonzero(grid == PREY),
-            'predator': np.count_nonzero(grid == PREDATOR),
-            'super_predator': np.count_nonzero(grid == SUPER_PREDATOR),
-            'vegetation': np.count_nonzero(grid == VEGETATION),
-            'water': np.count_nonzero(grid == WATER)
+            'step': step, 
+            'prey': prey_count, 
+            'predator': predator_count, 
+            'super_predator': super_predator_count,
+            'vegetation': vegetation_count,
+            'water': water_count
         })
 
     # Convert to DataFrame
@@ -208,24 +228,6 @@ def main():
     ax.set_title('Ecosystem Population Dynamics')
     ax.legend()
     ax.grid(True, linestyle='--', alpha=0.7)
-    st.pyplot(fig)
-    plt.close(fig)
-
-    # Heatmap Visualization
-    st.subheader('Ecosystem Grid Evolution')
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    
-    # Initial, Middle, and Final Grid States
-    grid_to_plot = [grid_states[0], grid_states[len(grid_states)//2], grid_states[-1]]
-    titles = ['Initial State', 'Mid Simulation', 'Final State']
-    
-    for i, (grid, title) in enumerate(zip(grid_to_plot, titles)):
-        im = axes[i].imshow(grid, cmap='viridis', interpolation='nearest')
-        axes[i].set_title(title)
-        plt.colorbar(im, ax=axes[i], ticks=[EMPTY, PREY, PREDATOR, VEGETATION, WATER, SUPER_PREDATOR],
-                     label='Ecosystem State')
-    
-    plt.tight_layout()
     st.pyplot(fig)
     plt.close(fig)
 
