@@ -98,7 +98,7 @@ def main():
     # Convert to DataFrame
     population_df = pd.DataFrame(population_data)
 
-    # Display population trends with enhanced visualization
+    # Display population trends visualization
     st.subheader('Population Trends Over Time')
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(population_df['step'], population_df['prey'], label='Prey', color='green', marker='o')
@@ -141,7 +141,7 @@ def main():
     
     st.subheader('Advanced Statistics')
     
-    # Create a more appealing visualization of advanced statistics
+    # Visualization of advanced statistics
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
     # Biodiversity Index
