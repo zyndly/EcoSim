@@ -41,30 +41,30 @@ class EcosystemSimulation:
                 neighbors.append((nx, ny))
         return neighbors
 
-    def apply_environmental_event(self):
+    def apply_environmental_event(self, drought, flood, disease):
         # Random environmental events
-        if random.random() < self.environmental_events['drought_probability']:
+        if drought and random.random() < self.environmental_events['drought_probability']:
             # Drought reduces vegetation and impacts prey
             drought_mask = np.random.random(self.grid.shape) < 0.3
             self.grid[drought_mask & (self.grid == VEGETATION)] = EMPTY
             self.grid[drought_mask & (self.grid == PREY)] = EMPTY
         
-        if random.random() < self.environmental_events['flood_probability']:
+        if flood and random.random() < self.environmental_events['flood_probability']:
             # Flood reduces populations in lower grid areas
             flood_mask = np.random.random(self.grid.shape) < 0.2
             self.grid[flood_mask] = WATER
         
-        if random.random() < self.environmental_events['disease_probability']:
+        if disease and random.random() < self.environmental_events['disease_probability']:
             # Disease outbreak randomly reduces population
             disease_mask = np.random.random(self.grid.shape) < 0.15
             self.grid[disease_mask & ((self.grid == PREY) | (self.grid == PREDATOR))] = EMPTY
 
-    def simulate_step(self):
+    def simulate_step(self, drought, flood, disease):
         # Create a copy of the grid to modify
         new_grid = self.grid.copy()
 
         # Apply environmental events
-        self.apply_environmental_event()
+        self.apply_environmental_event(drought, flood, disease)
 
         # Simulate for each cell
         for x in range(self.grid_size):
@@ -77,9 +77,13 @@ class EcosystemSimulation:
                     empty_neighbors = [n for n in neighbors if self.grid[n[0], n[1]] == EMPTY]
                     
                     # Reproduction
-                    if empty_neighbors and random.random() < 0.1:
+                    if empty_neighbors and random.random() < 0.05:  # Reduced reproduction chance
                         nx, ny = random.choice(empty_neighbors)
                         new_grid[nx, ny] = PREY
+                    
+                    # High mortality rate
+                    if random.random() < 0.1:
+                        new_grid[x, y] = EMPTY
                 
                 elif cell == PREDATOR:
                     # Predator hunting and starvation
@@ -93,6 +97,11 @@ class EcosystemSimulation:
                         new_grid[x, y] = EMPTY
                     elif random.random() < 0.2:
                         # Starvation
+                        new_grid[x, y] = EMPTY
+                    
+                    # Predator can be eaten by super predators
+                    super_predator_neighbors = [n for n in neighbors if self.grid[n[0], n[1]] == SUPER_PREDATOR]
+                    if super_predator_neighbors:
                         new_grid[x, y] = EMPTY
                 
                 elif cell == SUPER_PREDATOR:
@@ -120,6 +129,11 @@ def main():
     grid_size = st.sidebar.slider('Grid Size', 20, 50, 30)
     steps = st.sidebar.slider('Simulation Steps', 1, 100, 20)
 
+    # Environmental event toggles
+    drought = st.sidebar.checkbox('Enable Drought Events', value=True)
+    flood = st.sidebar.checkbox('Enable Flood Events', value=True)
+    disease = st.sidebar.checkbox('Enable Disease Events', value=True)
+
     # Initialize simulation
     sim = EcosystemSimulation(grid_size)
 
@@ -129,7 +143,7 @@ def main():
 
     # Run simulation
     for step in range(steps):
-        grid = sim.simulate_step()
+        grid = sim.simulate_step(drought, flood, disease)
         grid_states.append(grid.copy())
 
         # Track population
