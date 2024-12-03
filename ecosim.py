@@ -4,10 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 
-# Define grid size
-grid_size = 20
-
 def simulate_step(grid):
+    grid_size = grid.shape[0]
     new_grid = grid.copy()
     for i in range(grid_size):
         for j in range(grid_size):
@@ -45,19 +43,24 @@ def simulate_step(grid):
                         new_grid[i, j] = 0
     return new_grid
 
-# Streamlit app
 def main():
     st.title('EcoSim: A Simulated Ecosystem')
 
-    # User input for grid size
-    grid_size = st.slider('Grid Size', 10, 50, 20)
+    # User input for grid size (modified min and max)
+    grid_size = st.slider('Grid Size', 20, 50, 30)
 
     # Initialize the grid
     grid = np.random.choice([0, 1, 2, 3, 4, 5], size=(grid_size, grid_size), p=[0.6, 0.1, 0.1, 0.1, 0.05, 0.05])
 
     # Display the initial grid
-    st.write('Initial Ecosystem Grid')
-    st.write(grid)
+    st.subheader('Initial Ecosystem Grid')
+    fig, ax = plt.subplots(figsize=(10, 8))
+    im = ax.imshow(grid, cmap='viridis')
+    plt.colorbar(im, ax=ax, ticks=[0, 1, 2, 3, 4, 5], 
+                 label='Habitat State')
+    plt.title('Initial Ecosystem Grid')
+    st.pyplot(fig)
+    plt.close(fig)
 
     # Simulate steps
     steps = st.slider('Number of Steps', 1, 100, 10)
@@ -71,7 +74,7 @@ def main():
         grid = simulate_step(grid)
         
         # Visualize the current grid state
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(10, 8))
         im = ax.imshow(grid, cmap='viridis')
         plt.colorbar(im, ax=ax, ticks=[0, 1, 2, 3, 4, 5], 
                      label='Habitat State')
@@ -95,15 +98,31 @@ def main():
     # Convert to DataFrame
     population_df = pd.DataFrame(population_data)
 
-    # Display population trends
-    st.write('Population Trends Over Time')
-    st.line_chart(population_df.set_index('step'))
+    # Display population trends with enhanced visualization
+    st.subheader('Population Trends Over Time')
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(population_df['step'], population_df['prey'], label='Prey', color='green', marker='o')
+    ax.plot(population_df['step'], population_df['predator'], label='Predator', color='red', marker='s')
+    ax.plot(population_df['step'], population_df['new_predator'], label='New Predator', color='purple', marker='^')
+    ax.set_xlabel('Simulation Steps')
+    ax.set_ylabel('Population Count')
+    ax.set_title('Population Dynamics in EcoSim')
+    ax.legend()
+    ax.grid(True, linestyle='--', alpha=0.7)
+    st.pyplot(fig)
+    plt.close(fig)
 
-    # Display the final grid
-    st.write('Final Ecosystem Grid')
-    st.write(grid)
+    # Display the final grid with enhanced visualization
+    st.subheader('Final Ecosystem Grid')
+    fig, ax = plt.subplots(figsize=(12, 10))
+    im = ax.imshow(grid, cmap='viridis')
+    plt.colorbar(im, ax=ax, ticks=[0, 1, 2, 3, 4, 5], 
+                 label='Habitat State')
+    plt.title('Final Ecosystem Grid')
+    st.pyplot(fig)
+    plt.close(fig)
 
-    # Advanced statistics
+    # Advanced statistics with enhanced visualization
     def calculate_statistics(population_df):
         population_df['biodiversity_index'] = (
             population_df['prey'] + 
@@ -119,8 +138,37 @@ def main():
 
     # Calculate and display advanced statistics
     population_df = calculate_statistics(population_df)
-    st.write('Advanced Statistics')
-    st.write(population_df[['biodiversity_index', 'survival_probability']])
+    
+    st.subheader('Advanced Statistics')
+    
+    # Create a more appealing visualization of advanced statistics
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    
+    # Biodiversity Index
+    ax1.bar(['Biodiversity Index'], [population_df['biodiversity_index'].mean()], color='teal')
+    ax1.set_title('Average Biodiversity Index')
+    ax1.set_ylabel('Index Value')
+    
+    # Survival Probability
+    ax2.bar(['Survival Probability'], [population_df['survival_probability'].mean()], color='coral')
+    ax2.set_title('Average Survival Probability')
+    ax2.set_ylabel('Probability')
+    
+    plt.tight_layout()
+    st.pyplot(fig)
+    plt.close(fig)
+
+    # Detailed statistics table
+    st.write('Detailed Statistics:')
+    stats_df = pd.DataFrame({
+        'Metric': ['Total Population', 'Average Biodiversity', 'Average Survival Probability'],
+        'Value': [
+            population_df[['prey', 'predator', 'new_predator']].sum().sum(),
+            population_df['biodiversity_index'].mean(),
+            population_df['survival_probability'].mean()
+        ]
+    })
+    st.table(stats_df)
 
 if __name__ == "__main__":
     main()
